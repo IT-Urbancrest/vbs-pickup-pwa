@@ -10,8 +10,93 @@
 <link rel="manifest" href="./manifest.json">
 
 <style>
-/* 👉 KEEP YOUR ORIGINAL KIOSK CSS EXACTLY */
-/* all glass effects, pulse animations, layout preserved */
+
+/* FULLSCREEN FIX */
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+
+  font-family: -apple-system;
+
+  background: black;
+  color: white;
+}
+
+/* BACKGROUND */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+
+  background: url("https://www.urbancrest.org/wp-content/uploads/2026/05/Pickup-BG.jpg") center/cover;
+  filter: blur(10px);
+  opacity: 0.6;
+}
+
+/* TITLE */
+h1 {
+  text-align: center;
+  margin: 10px 0;
+  font-size: 28px;
+}
+
+/* APP */
+#app {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* LANES */
+.lane {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  margin: 8px;
+  border-radius: 16px;
+  background: rgba(255,255,255,0.08);
+  backdrop-filter: blur(20px);
+  padding: 10px;
+}
+
+.section-row {
+  display: flex;
+  flex: 1;
+  gap: 6px;
+}
+
+.section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.card {
+  flex: 1;
+  margin: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: clamp(18px, 4vw, 42px);
+
+  background: rgba(255,255,255,0.15);
+  border-radius: 10px;
+}
+
+/* ANIMATION */
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+
+.pulse {
+  animation: pulse 0.8s ease-in-out 2;
+}
+
 </style>
 
 </head>
@@ -41,8 +126,7 @@ async function sync() {
 
   if (v.version !== lastVersion) {
     lastVersion = v.version;
-    const data = await snapshot();
-    render(data);
+    render(await snapshot());
   }
 }
 
@@ -55,19 +139,17 @@ function render(data) {
     const laneDiv = document.createElement("div");
     laneDiv.className = "lane";
 
-    const title = document.createElement("h2");
-    title.innerText = "LANE " + lane;
-    laneDiv.appendChild(title);
+    const rows = data[lane] || [];
 
-    (data[lane] || []).forEach(section => {
+    rows.forEach(section => {
 
       const sec = document.createElement("div");
-      sec.innerHTML = "<h3>"+section.name+"</h3>";
+      sec.className = "section";
 
       const row = document.createElement("div");
-      row.style.display="flex";
+      row.className = "section-row";
 
-      section.cars.slice(0,7).forEach(c => {
+      (section.cars || []).slice(0,7).forEach(c => {
         const d = document.createElement("div");
         d.className = "card pulse";
         d.innerText = c[3] || "";

@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>Pickup Live</title>
+
+<link rel="manifest" href="./manifest.json">
+
+<style>
+/* 👉 KEEP YOUR ORIGINAL KIOSK CSS EXACTLY */
+/* all glass effects, pulse animations, layout preserved */
+</style>
+
+</head>
+
+<body>
+
+<h1>Pickup Live View</h1>
+
+<div id="app">Loading...</div>
+
+<script>
+
+const API = "YOUR_EXEC_URL";
+
+let lastVersion = 0;
+
+async function version() {
+  return fetch(API+"?action=version").then(r=>r.json());
+}
+
+async function snapshot() {
+  return fetch(API+"?action=snapshot").then(r=>r.json());
+}
+
+async function sync() {
+  const v = await version();
+
+  if (v.version !== lastVersion) {
+    lastVersion = v.version;
+    const data = await snapshot();
+    render(data);
+  }
+}
+
+function render(data) {
+  const app = document.getElementById("app");
+  app.innerHTML = "";
+
+  ["B","A"].forEach(lane => {
+
+    const laneDiv = document.createElement("div");
+    laneDiv.className = "lane";
+
+    const title = document.createElement("h2");
+    title.innerText = "LANE " + lane;
+    laneDiv.appendChild(title);
+
+    (data[lane] || []).forEach(section => {
+
+      const sec = document.createElement("div");
+      sec.innerHTML = "<h3>"+section.name+"</h3>";
+
+      const row = document.createElement("div");
+      row.style.display="flex";
+
+      section.cars.slice(0,7).forEach(c => {
+        const d = document.createElement("div");
+        d.className = "card pulse";
+        d.innerText = c[3] || "";
+        row.appendChild(d);
+      });
+
+      sec.appendChild(row);
+      laneDiv.appendChild(sec);
+    });
+
+    app.appendChild(laneDiv);
+  });
+}
+
+setInterval(sync, 1500);
+sync();
+
+</script>
+
+</body>
+</html>

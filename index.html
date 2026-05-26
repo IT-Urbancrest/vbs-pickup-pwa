@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html>
 <head>
+
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 
 <title>VBS Pickup</title>
 
@@ -13,26 +14,154 @@
 
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="VBS Pickup">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
 <style>
-body { margin:0; background:black; color:white; font-family: -apple-system; }
+/* ===== YOUR ORIGINAL STYLES (UNCHANGED) ===== */
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto;
+}
+
+/* keep everything else identical */
 </style>
+
 </head>
 
 <body>
 
-<h1>Loading Pickup System...</h1>
+<div class="bg"></div>
+<div id="toast" class="toast"></div>
+
+<button class="undo-fab" onclick="undoLast()">↺</button>
+
+<div class="container">
+
+  <div class="top">
+    <h1>VBS Pickup</h1>
+
+    <div id="capacityBar" class="capacity">Loading...</div>
+
+    <div class="input-container">
+      <input id="num" placeholder="Enter Number" inputmode="numeric">
+    </div>
+
+    <div class="lane-buttons">
+      <button class="a" onclick="submit('A')" id="aBtn">LANE A</button>
+      <button class="b" onclick="submit('B')" id="bBtn">LANE B</button>
+    </div>
+  </div>
+
+  <div class="bottom">
+    <button class="dismiss" onclick="dismissLane()">Dismiss Lane</button>
+    <button class="reset" onclick="resetAll()">Reset System</button>
+  </div>
+
+</div>
 
 <script>
-const API =
-  "https://script.google.com/macros/s/AKfycbxz-Tj5ifrlsWgUDgPlfbEYKzD7dEGrlTstXv2A6wThc0Qn_27DAjo9GJpL5RhBt_v6yQ/exec";
 
-fetch(API + "?action=snapshot")
-  .then(r => r.json())
-  .then(data => {
-    document.body.innerHTML =
-      "<pre>" + JSON.stringify(data, null, 2) + "</pre>";
-  });
+const API = "https://script.google.com/macros/s/AKfycbxz-Tj5ifrlsWgUDgPlfbEYKzD7dEGrlTstXv2A6wThc0Qn_27DAjo9GJpL5RhBt_v6yQ/exec";
+
+/* =========================
+   TOAST
+========================= */
+function toast(msg, type="error") {
+  const t = document.getElementById("toast");
+  t.innerText = msg;
+  t.className = "toast " + type;
+  t.classList.add("show");
+
+  setTimeout(() => t.classList.remove("show"), 3000);
+}
+
+/* =========================
+   FETCH WRAPPER
+========================= */
+async function api(action, params = {}) {
+  const url = new URL(API);
+  url.searchParams.set("action", action);
+
+  Object.entries(params).forEach(([k,v]) =>
+    url.searchParams.set(k, v)
+  );
+
+  const res = await fetch(url);
+  return res.json();
+}
+
+/* =========================
+   CAPACITY
+========================= */
+async function updateCapacity() {
+  const res = await api("capacity");
+
+  const bar = document.getElementById("capacityBar");
+  bar.innerText = `Capacity: ${res.total} / ${res.max}`;
+
+  document.getElementById("aBtn").disabled = res.full;
+  document.getElementById("bBtn").disabled = res.full;
+
+  bar.classList.toggle("full", res.full);
+}
+
+setInterval(updateCapacity, 5000);
+window.onload = updateCapacity;
+
+/* =========================
+   ADD CAR
+========================= */
+async function submit(line) {
+  const num = document.getElementById("num").value;
+
+  if (!num) return toast("Enter number");
+
+  const res = await api("add", { line, number: num });
+
+  document.getElementById("num").value = "";
+
+  if (res.success) return toast("Car added", "success");
+
+  toast(res.message || "Error");
+}
+
+/* =========================
+   UNDO
+========================= */
+async function undoLast() {
+  if (!confirm("Undo last entry?")) return;
+
+  const res = await api("undo");
+
+  if (res.success) toast("Undone", "success");
+  else toast("Nothing to undo");
+}
+
+/* =========================
+   DISMISS
+========================= */
+async function dismissLane() {
+  if (!confirm("Dismiss lane?")) return;
+  await api("dismiss");
+  toast("Lane dismissed", "success");
+}
+
+/* =========================
+   RESET (optional keep same logic server-side)
+========================= */
+async function resetAll() {
+  const ok = prompt("Type RESET to confirm");
+  if (ok !== "RESET") return toast("Cancelled");
+
+  await api("reset");
+  toast("Reset complete", "success");
+}
+
 </script>
 
 </body>

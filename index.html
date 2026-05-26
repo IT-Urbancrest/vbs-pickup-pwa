@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>VBS Pickup</title>
+
+<link rel="manifest" href="./manifest.json">
+
+<link rel="apple-touch-icon"
+      href="https://cdn.jsdelivr.net/gh/IT-Urbancrest/assets@main/pickupicon180.png">
+
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="VBS Pickup">
+
+<style>
+body { margin:0; background:black; color:white; font-family: -apple-system; }
+</style>
+</head>
+
+<body>
+
+<h1>Loading Pickup System...</h1>
+
+<script>
+const API =
+  "https://script.google.com/macros/s/AKfycbxz-Tj5ifrlsWgUDgPlfbEYKzD7dEGrlTstXv2A6wThc0Qn_27DAjo9GJpL5RhBt_v6yQ/exec";
+
+fetch(API + "?action=snapshot")
+  .then(r => r.json())
+  .then(data => {
+    document.body.innerHTML =
+      "<pre>" + JSON.stringify(data, null, 2) + "</pre>";
+  });
+</script>
+
+</body>
+</html>

@@ -19,13 +19,16 @@
 <style>
 
 /* =========================
-   BASE FIX (iOS STABILITY)
+   BASE / IOS FIX
 ========================= */
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+}
 
 html, body {
   margin: 0;
   padding: 0;
+
   width: 100%;
   height: 100%;
 
@@ -51,7 +54,6 @@ html, body {
   background-position: center;
 }
 
-/* blur overlay */
 body::before {
   content: "";
   position: fixed;
@@ -65,7 +67,7 @@ body::before {
 }
 
 /* =========================
-   LAYOUT (FIXED SCALING)
+   MAIN LAYOUT (FIXED SPACING)
 ========================= */
 .container {
   position: relative;
@@ -81,11 +83,16 @@ body::before {
   height: 100dvh;
 
   padding:
-    calc(20px + env(safe-area-inset-top))
-    20px
-    calc(20px + env(safe-area-inset-bottom));
+    calc(18px + env(safe-area-inset-top))
+    18px
+    calc(18px + env(safe-area-inset-bottom));
 
-  gap: 16px;
+  gap: clamp(12px, 2vh, 22px);
+}
+
+/* Prevent flex collapse weirdness on iOS */
+.container > * {
+  min-height: 0;
 }
 
 /* =========================
@@ -103,17 +110,37 @@ h1 {
 }
 
 /* =========================
+   CAPACITY
+========================= */
+.capacity {
+  text-align: center;
+
+  font-size: clamp(20px, 4vw, 40px);
+
+  color: white;
+
+  padding: 10px;
+  border-radius: 12px;
+
+  background: rgba(255,255,255,0.1);
+}
+
+.capacity.full {
+  background: rgba(255,0,0,0.35);
+}
+
+/* =========================
    INPUT
 ========================= */
 .input-container {
-  padding: 10px 0;
+  padding: 8px 0;
 }
 
 input {
   width: 100%;
 
   font-size: clamp(28px, 6vw, 64px);
-  padding: clamp(18px, 3vw, 35px);
+  padding: clamp(16px, 3vw, 34px);
 
   text-align: center;
 
@@ -127,11 +154,20 @@ input {
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
 
-  box-shadow:
-    inset 0 1px 2px rgba(255,255,255,0.4),
-    0 10px 30px rgba(0,0,0,0.4);
-
   outline: none;
+}
+
+/* =========================
+   LANE BUTTONS (FIXED SPACING)
+========================= */
+.lane-buttons {
+  display: flex;
+  flex-direction: column;
+
+  gap: clamp(14px, 3vh, 28px);
+
+  margin-top: 6px;
+  margin-bottom: 6px;
 }
 
 /* =========================
@@ -141,7 +177,7 @@ button {
   width: 100%;
 
   font-size: clamp(26px, 5.5vw, 56px);
-  padding: clamp(18px, 4vw, 50px) 0;
+  padding: clamp(18px, 4vw, 48px) 0;
 
   border-radius: 22px;
 
@@ -166,43 +202,49 @@ button {
 .reset { background: rgba(255, 140, 0, 0.55); }
 
 /* =========================
-   CAPACITY BAR
+   BOTTOM BUTTONS (BREATHING ROOM FIX)
 ========================= */
-.capacity {
-  text-align: center;
-  font-size: clamp(20px, 4vw, 40px);
+.bottom {
+  display: flex;
+  flex-direction: column;
 
-  color: white;
+  gap: clamp(14px, 2.5vh, 28px);
 
-  padding: 10px;
-  border-radius: 12px;
-
-  background: rgba(255,255,255,0.1);
-}
-
-.capacity.full {
-  background: rgba(255,0,0,0.35);
+  padding-top: 6px;
 }
 
 /* =========================
-   UNDO BUTTON
+   UNDO BUTTON (FIXED SCALE)
 ========================= */
 .undo-fab {
   position: fixed;
-  top: calc(20px + env(safe-area-inset-top));
-  right: 20px;
 
-  width: 110px;
-  height: 110px;
+  top: calc(16px + env(safe-area-inset-top));
+  right: calc(16px + env(safe-area-inset-right));
+
+  width: clamp(64px, 10vw, 96px);
+  height: clamp(64px, 10vw, 96px);
 
   border-radius: 50%;
 
-  font-size: 44px;
+  font-size: clamp(26px, 4vw, 40px);
+  font-weight: 700;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
   background: rgba(255,255,255,0.12);
   border: 1px solid rgba(255,255,255,0.25);
 
   backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+
+  box-shadow:
+    inset 0 1px 2px rgba(255,255,255,0.4),
+    0 15px 40px rgba(0,0,0,0.45);
+
+  z-index: 999;
 }
 
 /* =========================
@@ -243,6 +285,7 @@ button {
 <div class="container">
 
   <div>
+
     <h1>VBS Pickup</h1>
 
     <div id="capacityBar" class="capacity">Loading...</div>
@@ -251,11 +294,14 @@ button {
       <input id="num" placeholder="Enter Number" inputmode="numeric">
     </div>
 
-    <button class="a" onclick="submit('A')">LANE A</button>
-    <button class="b" onclick="submit('B')">LANE B</button>
+    <div class="lane-buttons">
+      <button class="a" onclick="submit('A')">LANE A</button>
+      <button class="b" onclick="submit('B')">LANE B</button>
+    </div>
+
   </div>
 
-  <div>
+  <div class="bottom">
     <button class="dismiss" onclick="dismissLane()">Dismiss Lane</button>
     <button class="reset" onclick="resetAll()">Reset System</button>
   </div>
@@ -266,9 +312,6 @@ button {
 
 const API = "YOUR_EXEC_URL";
 
-/* =========================
-   API
-========================= */
 async function api(action, params={}) {
   const url = new URL(API);
   url.searchParams.set("action", action);
@@ -278,9 +321,6 @@ async function api(action, params={}) {
   return fetch(url).then(r => r.json());
 }
 
-/* =========================
-   UI
-========================= */
 function toast(msg) {
   const t = document.getElementById("toast");
   t.innerText = msg;
@@ -300,9 +340,6 @@ async function updateCapacity() {
     .forEach(b => b.disabled = c.full);
 }
 
-/* =========================
-   ACTIONS
-========================= */
 async function submit(line) {
   const num = document.getElementById("num").value;
   if (!num) return toast("Enter number");
@@ -311,7 +348,7 @@ async function submit(line) {
 
   document.getElementById("num").value = "";
 
-  toast(res.success ? "Added" : (res.message || "Error"));
+  toast(res.success ? "Added" : "Error");
 }
 
 async function undoLast() {
@@ -331,9 +368,6 @@ async function resetAll() {
   toast("Reset complete");
 }
 
-/* =========================
-   LOOP
-========================= */
 setInterval(updateCapacity, 3000);
 updateCapacity();
 
